@@ -1,61 +1,76 @@
 # Arch Rules Skills
 
-Portable agent skills for applying an architecture-rules baseline to planning, implementation, and review.
+Навыки для агентов, которые превращают архитектурные правила из большого документа в рабочий контекст для планирования, реализации и ревью.
 
-This repository contains:
+Этот репозиторий не хранит сами правила. Он учит агента брать baseline из [ai-meatbags/arch-rules](https://github.com/ai-meatbags/arch-rules) или из project-pinned копии и применять его к конкретной задаче.
 
-- `arch-rules-context` - builds a compact Architecture Context Map from project docs and an architecture-rules baseline.
-- `arch-rules-slice-planning` - turns architecture intent into boundary-preserving implementation slices.
-- `arch-rules-implementation-review` - reviews implementation against architecture gates, not just tests.
+## Зачем Это Нужно
 
-## What This Is
+Архитектурный baseline сам по себе бесполезен, если агент его просто прочитал и пошёл писать код как обычно. Нужен слой, который заставляет агента:
 
-These skills are a small methodology pack. They do not define the architecture rules themselves. They tell an agent how to find a project-provided baseline, select the applicable rules, and use those rules to constrain planning and review.
+- найти правильный источник правил;
+- выбрать применимые AP-ID;
+- явно сказать, какие правила не применимы;
+- заметить конфликт до кода;
+- превратить правила в план, slices и review gates.
 
-## Agent Bootstrap
+Эти skills закрывают работу:
 
-If an agent is given only this repository link, it should follow this order:
+> У меня есть архитектурные правила, но я не хочу каждый раз вручную объяснять агенту, как их читать, какие правила выбирать, как не превратить baseline в чеклист на 100 пунктов и когда надо остановиться вместо “ну я примерно понял”.
 
-1. Install or confirm Superpowers.
-2. Install all `arch-rules-*` skills from this repository.
-3. In the target project, locate the architecture-rules baseline.
-4. Run `arch-rules-context` to create an Architecture Context Map.
-5. Only then use `arch-rules-slice-planning` or `arch-rules-implementation-review`.
+`arch-rules-skills` делает правила исполнимыми для агента. Не в смысле автоматической магии, а в смысле повторяемого рабочего протокола.
 
-Fail fast before planning or implementation if any required dependency is missing.
+## Что Внутри
 
-## Dependencies
+В пакете три skills:
 
-This pack depends on Superpowers or equivalent planning/TDD/verification skills.
+- `arch-rules-context` - находит baseline, читает проектные документы и создаёт `Architecture Context Map`.
+- `arch-rules-slice-planning` - превращает архитектурный контекст в implementation slices по границам, а не по случайным файлам.
+- `arch-rules-implementation-review` - проверяет реализацию против архитектурных gates, а не только против тестов.
 
-Canonical links:
+Их роли разделены специально:
 
-- Superpowers source project: https://github.com/obra/superpowers
-- Claude plugin page: https://claude.com/plugins/superpowers
-- Codex installation guide: https://github.com/obra/superpowers/blob/main/docs/README.codex.md
+- context skill отвечает за “какие правила вообще применимы”;
+- planning skill отвечает за “как строить работу, чтобы не сломать границы”;
+- review skill отвечает за “что реально нарушено и почему это важно”.
 
-Required Superpowers skill surface:
+## Зависимости
+
+Пакет не standalone. Ему нужны:
+
+- [Superpowers](https://github.com/obra/superpowers) или эквивалентные навыки планирования, TDD и verification gates;
+- читаемый architecture baseline.
+
+Полезные ссылки:
+
+- Superpowers source: https://github.com/obra/superpowers
+- Claude Superpowers plugin: https://claude.com/plugins/superpowers
+- Codex Superpowers install guide: https://github.com/obra/superpowers/blob/main/docs/README.codex.md
+- Default architecture baseline: https://github.com/ai-meatbags/arch-rules
+
+Минимальная поверхность Superpowers:
 
 - `superpowers:brainstorming`
 - `superpowers:writing-plans`
 - `superpowers:test-driven-development`
 - `superpowers:verification-before-completion`
 
-Project input dependency:
+## Откуда Брать Архитектурные Правила
 
-- Preferred: a project-pinned architecture-rules baseline in the target repository.
-- Default public baseline: https://github.com/ai-meatbags/arch-rules
-- Project override: a project policy file may name a different public or private baseline.
+Агент должен искать baseline в таком порядке:
 
-Baseline resolution order:
+1. Project-local policy или docs:
+   - `AGENTS.md`
+   - `docs/project-arch-rules.md`
+   - `docs/arch-rules.md`
+   - `docs/architecture.md`
+   - `.agents/`
+2. URL или repo, явно названный пользователем.
+3. Default public baseline: https://github.com/ai-meatbags/arch-rules
 
-1. Project-local policy or docs, such as `AGENTS.md`, `docs/project-arch-rules.md`, `docs/arch-rules.md`, `docs/architecture.md`, or `.agents/`.
-2. A baseline URL or repository explicitly named by the user.
-3. The default public baseline: https://github.com/ai-meatbags/arch-rules
+Если выбранный baseline нельзя прочитать, агент обязан остановиться до планирования и до кода.
 
-If the selected baseline cannot be read, the agent must stop with a clear error. It must not invent architecture rules or continue with generic best practices.
-
-Fail-fast message shape:
+Fail-fast форма:
 
 ```text
 Cannot start arch-rules workflow.
@@ -64,11 +79,52 @@ Tried: <paths and URLs checked>
 Next action: <install dependency or provide baseline URL/path>
 ```
 
-## Install In Codex
+Нельзя продолжать с “общими best practices”, если baseline не прочитан.
 
-Install Superpowers first, or confirm that equivalent Superpowers skills are already available.
+## Как Это Работает
 
-Recommended agent instruction:
+Нормальный поток:
+
+1. Установить или подтвердить Superpowers.
+2. Установить все `arch-rules-*` skills из этого repo.
+3. В целевом проекте найти baseline.
+4. Запустить `arch-rules-context`.
+5. Получить `Architecture Context Map`.
+6. Только после этого использовать `arch-rules-slice-planning` или `arch-rules-implementation-review`.
+
+`Architecture Context Map` должен выглядеть примерно так:
+
+```markdown
+Architecture Context Map
+- Stage: mvp | prod | scale
+- Source docs: ...
+- Critical AP gates: AP-...
+- Baseline AP gates: AP-...
+- Not applicable: AP-... because ...
+- Deviations: none | ...
+- Plan decisions still open: ...
+```
+
+Это не отчёт ради отчёта. Это рабочая выжимка из baseline для конкретной задачи.
+
+## Когда Использовать
+
+Используй эти skills, когда агент:
+
+- пишет план по feature/spec;
+- делает архитектурное ревью;
+- проверяет реализацию перед завершением;
+- разбивает работу на slices;
+- спорит с предложенным решением через AP-ID;
+- должен понять, какие архитектурные правила применимы именно здесь.
+
+Не используй их как замену самим правилам. Эти skills - процесс применения baseline, а не baseline.
+
+## Установка В Codex
+
+Сначала установи или подтверди Superpowers.
+
+Инструкция для агента:
 
 ```text
 Install or confirm Superpowers first.
@@ -79,7 +135,7 @@ Fail fast if Superpowers, any arch-rules-* skill, or a readable baseline is miss
 After installation, restart Codex so the skills are discovered.
 ```
 
-Manual fallback:
+Ручной fallback:
 
 ```sh
 git clone https://github.com/VanDalkvist/arch-rules-skills.git
@@ -88,9 +144,9 @@ mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 cp -R skills/arch-rules-* "${CODEX_HOME:-$HOME/.codex}/skills/"
 ```
 
-## Install In Claude Code
+## Установка В Claude Code
 
-Install the Superpowers plugin first, or confirm equivalent Superpowers skills are already installed: https://claude.com/plugins/superpowers
+Сначала установи Superpowers plugin или подтверди эквивалентные Superpowers skills: https://claude.com/plugins/superpowers
 
 Personal install:
 
@@ -112,14 +168,14 @@ cp -R ../arch-rules-skills/skills/arch-rules-* .claude/skills/
 
 Claude Code skills documentation: https://code.claude.com/docs/en/skills
 
-## Verify
+## Проверка
 
 ```sh
 find skills -name SKILL.md -maxdepth 3 -print
 grep -R "<project-specific-name>\|<absolute-home-path>\|<private-user-name>" -n skills docs README.md AGENTS.md scripts || true
 ```
 
-For Codex skill schema validation, use the local Codex validator when available:
+Для Codex schema validation:
 
 ```sh
 for skill in skills/arch-rules-*; do
@@ -127,13 +183,15 @@ for skill in skills/arch-rules-*; do
 done
 ```
 
-## Relationship To Arch Improvement Skills
+## Связь С Другими Репозиториями
 
-`arch-improvement-skills` depends on this pack. Install order:
+Порядок установки полного набора:
 
-1. Superpowers
-2. `arch-rules-skills`
-3. `arch-improvement-skills`
+1. [Superpowers](https://github.com/obra/superpowers)
+2. [arch-rules-skills](https://github.com/VanDalkvist/arch-rules-skills)
+3. [arch-improvement-skills](https://github.com/VanDalkvist/arch-improvement-skills)
+
+`arch-improvement-skills` зависит от этого пакета. Этот пакет зависит от readable baseline, например [ai-meatbags/arch-rules](https://github.com/ai-meatbags/arch-rules).
 
 ## License
 

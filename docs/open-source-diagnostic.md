@@ -38,7 +38,7 @@ The dependency is now explicit in `README.md`.
 ## Risk Register
 
 - Risk: users install these skills without an architecture-rules baseline.
-  - Mitigation: README and `arch-rules-context` require a project-pinned or policy-named baseline.
+  - Mitigation: README and `arch-rules-context` define baseline resolution order and a default public baseline.
 - Risk: users treat `arch-rules` as a paste-in checklist.
   - Mitigation: `arch-rules-context` instructs the agent to select applicable rules and mark non-applicable rules explicitly.
 - Risk: the pack is confused with `arch-improvement-skills`.

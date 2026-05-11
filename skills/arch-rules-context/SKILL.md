@@ -18,7 +18,11 @@ Create a small architecture context map before planning or coding. Do not copy t
 ## Workflow
 
 1. Read the current project architecture/spec and any project-owned policy or AGENTS.md.
-2. Locate the arch-rules baseline. Prefer the project-pinned copy; otherwise use the public upstream or baseline repository named by project policy. If no baseline is named, stop and ask for the baseline source instead of inventing rules.
+2. Locate the arch-rules baseline:
+   - Prefer a project-pinned copy or project policy pointer.
+   - Then use a baseline URL or repository explicitly named by the user.
+   - Otherwise use the default public baseline at `https://github.com/ai-meatbags/arch-rules`.
+   - If the selected baseline cannot be read, stop before planning or implementation. Do not invent rules or continue with generic best practices.
 3. Identify the project stage: `mvp`, `prod`, or `scale`. If unclear, infer conservatively and state the assumption.
 4. Build an `Architecture Context Map`:
    - Applicable critical AP rules.

@@ -12,6 +12,18 @@ This repository contains:
 
 These skills are a small methodology pack. They do not define the architecture rules themselves. They tell an agent how to find a project-provided baseline, select the applicable rules, and use those rules to constrain planning and review.
 
+## Agent Bootstrap
+
+If an agent is given only this repository link, it should follow this order:
+
+1. Install or confirm Superpowers.
+2. Install all `arch-rules-*` skills from this repository.
+3. In the target project, locate the architecture-rules baseline.
+4. Run `arch-rules-context` to create an Architecture Context Map.
+5. Only then use `arch-rules-slice-planning` or `arch-rules-implementation-review`.
+
+Fail fast before planning or implementation if any required dependency is missing.
+
 ## Dependencies
 
 This pack depends on Superpowers or equivalent planning/TDD/verification skills.
@@ -31,8 +43,26 @@ Required Superpowers skill surface:
 
 Project input dependency:
 
-- A project-pinned architecture-rules baseline, or a public upstream baseline named by project policy.
-- If no baseline is named, the agent should stop and ask for the source instead of inventing rules.
+- Preferred: a project-pinned architecture-rules baseline in the target repository.
+- Default public baseline: https://github.com/ai-meatbags/arch-rules
+- Project override: a project policy file may name a different public or private baseline.
+
+Baseline resolution order:
+
+1. Project-local policy or docs, such as `AGENTS.md`, `docs/project-arch-rules.md`, `docs/arch-rules.md`, `docs/architecture.md`, or `.agents/`.
+2. A baseline URL or repository explicitly named by the user.
+3. The default public baseline: https://github.com/ai-meatbags/arch-rules
+
+If the selected baseline cannot be read, the agent must stop with a clear error. It must not invent architecture rules or continue with generic best practices.
+
+Fail-fast message shape:
+
+```text
+Cannot start arch-rules workflow.
+Missing: <Superpowers skill | arch-rules skill | readable architecture-rules baseline>
+Tried: <paths and URLs checked>
+Next action: <install dependency or provide baseline URL/path>
+```
 
 ## Install In Codex
 
@@ -41,8 +71,11 @@ Install Superpowers first, or confirm that equivalent Superpowers skills are alr
 Recommended agent instruction:
 
 ```text
+Install or confirm Superpowers first.
 Install all skills from https://github.com/VanDalkvist/arch-rules-skills/tree/main/skills into Codex.
 Use the Codex skill-installer flow if available. Install every arch-rules-* skill.
+Before using the skills, locate a project-pinned architecture-rules baseline or use the default public baseline at https://github.com/ai-meatbags/arch-rules.
+Fail fast if Superpowers, any arch-rules-* skill, or a readable baseline is missing.
 After installation, restart Codex so the skills are discovered.
 ```
 

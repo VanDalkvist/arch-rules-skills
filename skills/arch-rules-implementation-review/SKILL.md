@@ -50,7 +50,19 @@ Architecture verification
 - Passed: AP-...
 - Not applicable: AP-...
 - Residual risk: ...
+
+VERDICT: PASS | FAIL
 ```
+
+## Verdict Rules
+
+- **VERDICT: FAIL** if:
+  - Any unresolved P0, P1, or P2 architecture rule violations, boundary leaks, or line budget breaches (AP-019) exist.
+  - Verification evidence is missing or non-deterministic.
+- **VERDICT: PASS** only when:
+  - All applicable AP rules pass without open P0, P1, or P2 findings.
+  - Residual architecture risk is clearly documented and bounded.
+  - Only P3 findings (optional maintainability observations) remain triaged.
 
 ## Common Mistakes
 
